@@ -69,7 +69,7 @@
 		updateTransform();
 	};
 
-	const onMouseDown = (event: MouseEvent) => {
+	const onMouseDown = (event: MouseEvent | TouchEvent) => {
 		event.preventDefault();
 		if (isDrawing) {
 			updateCursorPoint(event);
@@ -81,13 +81,13 @@
 			onNewZoneDrawingStarted();
 		} else {
 			isDragging = true;
-			startX = event.clientX;
-			startY = event.clientY;
+			startX = (event instanceof MouseEvent) ? event.clientX : event.touches[0].clientX;
+			startY = (event instanceof MouseEvent) ? event.clientY : event.touches[0].clientY;
 			cursorContainerStyle = 'cursor-grabbing';
 		}
 	};
 
-	const onMouseMove = (event: MouseEvent) => {
+	const onMouseMove = (event: MouseEvent | TouchEvent) => {
 		if (isDrawing && newZone) {
 			updateCursorPoint(event);
 
@@ -98,16 +98,16 @@
 			newZone.width = currentX - drawStartX;
 			newZone.height = currentY - drawStartY;
 		} else if (isDragging) {
-			originX += (event.clientX - startX) * dragDelta;
-			originY += (event.clientY - startY) * dragDelta;
-			startX = event.clientX;
-			startY = event.clientY;
+			originX += (((event instanceof MouseEvent) ? event.clientX : event.touches[0].clientX) - startX) * dragDelta;
+			originY += (((event instanceof MouseEvent) ? event.clientY : event.touches[0].clientY) - startY) * dragDelta;
+			startX = (event instanceof MouseEvent) ? event.clientX : event.touches[0].clientX;
+			startY = (event instanceof MouseEvent) ? event.clientY : event.touches[0].clientY;
 
 			updateTransform();
 		}
 	};
 
-	const onMouseUp = (event: MouseEvent) => {
+	const onMouseUp = (event: MouseEvent | TouchEvent) => {
 		if (isDrawing) {
 			toggleDrawing();
 			onNewZoneDrawingFinished();
@@ -128,9 +128,9 @@
 		}
 	};
 
-	const updateCursorPoint = (event: MouseEvent) => {
-		cursorPoint.x = event.clientX;
-		cursorPoint.y = event.clientY;
+	const updateCursorPoint = (event: MouseEvent | TouchEvent) => {
+		cursorPoint.x = (event instanceof MouseEvent) ? event.clientX : event.touches[0].clientX;
+		cursorPoint.y = (event instanceof MouseEvent) ? event.clientY : event.touches[0].clientY;
 		cursorPoint = cursorPoint.matrixTransform(svgElement.getScreenCTM()?.inverse());
 	};
 
@@ -193,7 +193,7 @@
 		newZone = null;
 	}
 
-	const toggleDrawing = (event?: MouseEvent) => {
+	const toggleDrawing = (event?: MouseEvent | TouchEvent) => {
 		event?.preventDefault();
 		event?.stopPropagation();
 		isDeleting = false;
@@ -206,7 +206,7 @@
 			cursorZoneStyle = 'cursor-pointer';
 		}
 	};
-	const toggleZoneDelete = (event?: MouseEvent) => {
+	const toggleZoneDelete = (event?: MouseEvent | TouchEvent) => {
 		event?.preventDefault();
 		event?.stopPropagation();
 		isDrawing = false;
