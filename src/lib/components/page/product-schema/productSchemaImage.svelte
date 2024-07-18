@@ -31,6 +31,7 @@
 	let cursorPoint: SVGPoint;
 	let cursorContainerStyle: string = $state('cursor-grab');
 	let cursorZoneStyle: string = $state('cursor-pointer');
+	let lastTouchDistance: number | null = null;
 	let containerWidth: number = 0;
 	let containerHeight: number = 0;
 	let imageWidth: number = 0;
@@ -70,7 +71,6 @@
 	};
 
 	const onMouseDown = (event: MouseEvent | TouchEvent) => {
-		event.preventDefault();
 		if (isDrawing) {
 			updateCursorPoint(event);
 
@@ -116,6 +116,43 @@
 			cursorContainerStyle = 'cursor-grab';
 		}
 	};
+	
+	const handleTouchStart = (event: TouchEvent) => {
+		if (event.touches.length === 2) {
+			lastTouchDistance = getTouchDistance(event.touches);
+		} else {
+			onMouseDown(event);
+		}
+	};
+
+	const handleTouchMove = (event: TouchEvent) => {
+		if (event.touches.length === 2 && lastTouchDistance !== null) {
+			const currentTouchDistance = getTouchDistance(event.touches);
+			const scaleDelta = (currentTouchDistance - lastTouchDistance) * 0.01;
+
+			scale = Math.min(Math.max(minScale, scale + scaleDelta), maxScale);
+			lastTouchDistance = currentTouchDistance;
+
+			updateTransform();
+		} else {
+			onMouseMove(event);
+		}
+	};
+
+	const handleTouchEnd = (event: TouchEvent) => {
+		if (event.touches.length < 2) {
+			lastTouchDistance = null;
+		}
+		onMouseUp(event);
+	};
+
+	const getTouchDistance = (touches: TouchList): number => {
+		const [touch1, touch2] = touches;
+		return Math.sqrt(
+			Math.pow(touch2.clientX - touch1.clientX, 2) +
+			Math.pow(touch2.clientY - touch1.clientY, 2)
+		);
+	};
 
 	const updateTransform = () => {
 		if (svgElement && imageElement) {
@@ -150,6 +187,9 @@
 		document.addEventListener('mouseup', onMouseUp);
 		document.addEventListener('mousemove', onMouseMove);
 		window.addEventListener('resize', handleResize);
+		svgElement.addEventListener('touchstart', handleTouchStart);
+		svgElement.addEventListener('touchmove', handleTouchMove);
+		svgElement.addEventListener('touchend', handleTouchEnd);
 
 		// Set original image dimensions
 		const img = new Image();
@@ -166,6 +206,9 @@
 			document.removeEventListener('mouseup', onMouseUp);
 			document.removeEventListener('mousemove', onMouseMove);
 			window.removeEventListener('resize', handleResize);
+			svgElement.removeEventListener('touchstart', handleTouchStart);
+			svgElement.removeEventListener('touchmove', handleTouchMove);
+			svgElement.removeEventListener('touchend', handleTouchEnd);
 		};
 	});
 
